@@ -1,0 +1,108 @@
+---
+title: "MSciProject_2"
+output:
+  html_notebook: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r load libraries, echo=FALSE}
+library("dplyr")
+library("pwr")
+library("NMF")
+library("randomForest")
+library("tree")
+library("NbClust")
+library("cluster")
+library("fpc")
+```
+
+This shows where the figures should be saved on my computer.
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.path="Users/sakura/Desktop/Uni!/Stage4/CMB4009_ResearchProject/R/RPlots/")
+```
+
+```{r Power Calculations for Vali}
+pwr.anova.test(k=2, n= 196 , f= 0.25, sig.level = 0.05)
+```
+
+```{r Power Calculations for Disc}
+pwr.anova.test(k=2, n= 119 , f= 0.25, sig.level = 0.05)
+```
+
+```{r Prep dataframe for clustering}
+all_domains <- clin2[2:15]
+all_domains <- na.omit(all_domains)
+
+```
+
+```{r Ward Hierarchical Clustering }
+d = dist(all_domains[2:13])
+d = na.omit(d)
+hc = hclust(d, method= "ward.D2") 
+plot(hc)
+
+```
+
+
+```{r Prep data and determining number of clusters }
+domains <- (all_domains[2:13])
+
+wssplot(domains)                                              
+set.seed(1234)
+nc <- NbClust(domains, min.nc=3, max.nc=6, method="kmeans")
+table(nc$Best.n[1,])  # errors but still gives plot?? chose nc = 5
+barplot(table(nc$Best.n[1,]),
+        xlab="Numer of Clusters", ylab="Number of Criteria",
+        main="Number of Clusters")
+```
+
+
+```{r K means, NC = 4}
+
+set.seed(1234)
+fit.km <- kmeans(domains, 4, nstart=25)                          
+fit.km$size
+```
+
+```{r Kmeans, NC = 6}
+
+set.seed(1234)
+fit.km <- kmeans(domains, 6, nstart=25)                          
+fit.km$size
+```
+
+```{r Visualising K means results}
+
+plotcluster(domains, fit.km$cluster)
+
+clusplot(domains, fit.km$cluster, color=TRUE, shade=TRUE, 
+         labels=2, lines=0)
+
+kc <- kmeans(domains, 6, nstart = 10) # nstart = 10 generates 10 initial configurations
+kc <- set.seed(6, kind = NULL, normal.kind = NULL) # to guarantee that the results are reproducible 
+
+```
+
+
+
+```{r Non-Negative Matrix Factorisation for Vali}
+
+VP_no0 <- subset(vali_pheno4, vali_pheno4[,25] >= 1) ## take out rows with total ESSDAI score = 0
+
+resV <-nmf(VP_no0[13:24], 2, method = "brunet")
+
+resV10 <- nmf(VP_no0[13:24], 2, method = "brunet", nrun = 10)
+
+```
+
+```{r Non-Negative Matrix Factorisation for Disc}
+
+DP_no0 <- subset(disc_pheno4, disc_pheno4[,25] >= 1) ## take out rows with total ESSDAI score = 0
+
+resD <-nmf(DP_no0[13:24], 2, method = "brunet")
+
+resD10 <- nmf(DP_no0[13:24], 2, method = "brunet", nrun = 10)
+
+```
+
